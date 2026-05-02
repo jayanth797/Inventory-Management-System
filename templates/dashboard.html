@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dashboard – Inventory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --coral: #ff6b6b;
+            --amber: #ffd93d;
+            --mint: #6bcb77;
+            --blue: #4d96ff;
+            --purple: #c77dff;
+            --navy: #0d1b2a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #e8eaf0;
+            --muted: rgba(232, 234, 240, 0.5);
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── NAV ── */
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 40px;
+            background: rgba(13, 27, 42, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--coral), var(--amber), var(--mint), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-decoration: none;
+            color: var(--muted);
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            padding: 40px 40px 28px;
+        }
+
+        .page-header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 40%, rgba(255, 255, 255, 0.5));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .page-header p {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        /* ── STAT CARDS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 0 40px 36px;
+        }
+
+        .stat-card {
+            border-radius: 18px;
+            padding: 28px 24px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            animation: fadeIn 0.5s ease both;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: inherit;
+            opacity: 0.08;
+            border-radius: inherit;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stat-card:nth-child(1) {
+            background: linear-gradient(135deg, #ff6b6b22, #ff8e5322);
+            animation-delay: 0.05s;
+        }
+
+        .stat-card:nth-child(2) {
+            background: linear-gradient(135deg, #4d96ff22, #c77dff22);
+            animation-delay: 0.1s;
+        }
+
+        .stat-card:nth-child(3) {
+            background: linear-gradient(135deg, #ffd93d22, #ff6b6b22);
+            animation-delay: 0.15s;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .stat-card:nth-child(1) .stat-value {
+            color: var(--coral);
+        }
+
+        .stat-card:nth-child(2) .stat-value {
+            color: var(--blue);
+        }
+
+        .stat-card:nth-child(3) .stat-value {
+            color: var(--amber);
+        }
+
+        /* ── TWO COLUMN ── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            padding: 0 40px 40px;
+        }
+
+        @media (max-width: 900px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── CHART CARDS ── */
+        .chart-section {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .chart-card,
+        .low-stock-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 28px;
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 18px;
+            border-radius: 2px;
+            background: linear-gradient(180deg, var(--coral), var(--amber));
+        }
+
+        canvas {
+            max-height: 320px;
+        }
+
+        /* ── LOW STOCK ── */
+        .low-stock-card {
+            height: fit-content;
+        }
+
+        .low-stock-list {
+            list-style: none;
+        }
+
+        .low-stock-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 0.9rem;
+        }
+
+        .low-stock-list li:last-child {
+            border-bottom: none;
+        }
+
+        .low-stock-list .name {
+            color: var(--text);
+        }
+
+        .low-stock-list .qty {
+            background: rgba(255, 107, 107, 0.18);
+            color: var(--coral);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .empty-msg {
+            color: var(--muted);
+            font-size: 0.9rem;
+            padding: 16px 0;
+        }
+
+        .all-good {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--mint);
+            font-size: 0.9rem;
+            padding: 8px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="nav-logo">📦 Invntry</div>
+        <div class="nav-links">
+            <a href="{% url 'product_list' %}">Products</a>
+            <a href="{% url 'dashboard' %}" class="active">Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <h1>Dashboard</h1>
+        <p>Your inventory at a glance</p>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">🗃️</div>
+            <div class="stat-label">Total Products</div>
+            <div class="stat-value">{{ total_products }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-label">Total Quantity</div>
+            <div class="stat-value">{{ total_quantity }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-label">Inventory Value</div>
+            <div class="stat-value">₹{{ total_value }}</div>
+        </div>
+    </div>
+
+    <!-- CHARTS + LOW STOCK -->
+    <div class="two-col">
+        <div class="chart-section">
+            <div class="chart-card">
+                <div class="section-title">Inventory Value by Product</div>
+                <canvas id="valueChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="section-title">Quantity Distribution</div>
+                <canvas id="quantityChart"></canvas>
+            </div>
+        </div>
+
+        <div class="low-stock-card">
+            <div class="section-title">Low Stock (&lt; 5)</div>
+            <ul class="low-stock-list">
+                {% for product in low_stock %}
+                <li>
+                    <span class="name">{{ product.name }}</span>
+                    <span class="qty">{{ product.quantity }} left</span>
+                </li>
+                {% empty %}
+                <li>
+                    <div class="all-good">✅ All products well stocked!</div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const names = {{ names| safe }};
+        const values = {{ values| safe }};
+        const quantities = {{ quantities| safe }};
+
+        Chart.defaults.color = 'rgba(232,234,240,0.6)';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+
+        // Value Bar Chart
+        new Chart(document.getElementById('valueChart'), {
+            type: 'bar',
+            data: {
+                labels: names,
+                datasets: [{
+                    label: 'Value (₹)',
+                    data: values,
+                    backgroundColor: names.map((_, i) => [
+                        'rgba(255,107,107,0.7)',
+                        'rgba(77,150,255,0.7)',
+                        'rgba(255,217,61,0.7)',
+                        'rgba(107,203,119,0.7)',
+                        'rgba(199,125,255,0.7)',
+                        'rgba(255,159,64,0.7)'
+                    ][i % 6]),
+                    borderColor: names.map((_, i) => [
+                        '#ff6b6b', '#4d96ff', '#ffd93d', '#6bcb77', '#c77dff', '#ff9f40'
+                    ][i % 6]),
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Quantity Doughnut
+        new Chart(document.getElementById('quantityChart'), {
+            type: 'doughnut',
+            data: {
+                labels: names,
+                datasets: [{
+                    data: quantities,
+                    backgroundColor: [
+                        'rgba(255,107,107,0.8)',
+                        'rgba(77,150,255,0.8)',
+                        'rgba(255,217,61,0.8)',
+                        'rgba(107,203,119,0.8)',
+                        'rgba(199,125,255,0.8)',
+                        'rgba(255,159,64,0.8)'
+                    ],
+                    borderColor: 'rgba(13,27,42,0.8)',
+                    borderWidth: 3,
+                    hoverOffset: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10 }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
